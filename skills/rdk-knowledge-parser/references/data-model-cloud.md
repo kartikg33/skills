@@ -62,17 +62,34 @@ Record agent endpoint id, controller, MTP type, topics.
 
 libupnp (`Upnp*`, `ixml*`), SCPD XML, `Device.UPnP.*`. utopia `igd` exposes IGD services.
 
-## HAL
+## HAL modules and functions
 
-`platform_hal_*`, `wifi_hal`/`wifi_get*`, `moca_hal_*`, `cm_hal_*`, `ethsw_hal`/`CcspHalEthSw*`, `dhcpv4c_*`, `mta_hal_*`.
+A HAL dependency is **function-level**. Record module, function name, header and the
+library that implements it: `halfn:wifi:wifi_getRadioEnable`, module `wifi`,
+header `wifi_hal.h`, library `libhal_wifi.so`. The module list to check: `wifi`,
+`platform`, `moca`, `cm`, `ethsw`, `dhcpv4c`, `mta`, `PAL`/`pal`.
+Common call prefixes: `wifi_*`, `platform_hal_*`, `moca_hal_*`, `cm_hal_*`,
+`ethsw_hal_*`, `CcspHalEthSw*`, `wifiHal*`, `mocaHal*`. `c_extract.py` emits
+`kind: hal` with `module` and `key` = function name for these prefixes.
+Other families: `wifi_hal`/`wifi_get*`, `ethsw_hal`/`CcspHalEthSw*`.
 Link `-lhal_platform`, `-lhal_wifi`, etc. HAL = vendor implementation dependency.
+`dlopen("libhal_vendor.so")` is a runtime link to the same family.
 
-## Device identity and gating
+## Device gates and device properties
+
+`isFeatureSupportedInCurrentMode(FEATURE_*)`, `_HUB4_PRODUCT_REQ_`,
+`_XB6_PRODUCT_REQ_`, `MACHINE_FEATURES` and `.bbappend:<machine>` select the device
+profile on which a dependency exists. Attach the gate and device to the dependency.
+`/etc/device.properties` keys (`devprop:BUILD_TYPE`, `devprop:MODEL_NUM`, ...) are
+interfaces: record the key, not just that the file was read.
+
+## Device identity, shell libraries and partner defaults
 
 - `/etc/device.properties` keys (`BOX_TYPE`, `MODEL_NUM`, `BUILD_TYPE`, `WAN_INTERFACE`, `ARM_INTERFACE_IP`,
   `ATOM_INTERFACE_IP`, `MESH_*`). Read by shell `source /etc/device.properties` or C property readers.
 - `/etc/waninfo.sh`, `/etc/utopia/service.d/*.sh`, `/lib/rdk/*.sh` shared shell libraries.
-- Device mode / OneStack gates: `isFeatureSupportedInCurrentMode(FEATURE_X)`, `-lrdkb_feature_mode_gate`, `-ldevicemode`.
+- Device mode / OneStack switches: `isFeatureSupportedInCurrentMode(FEATURE_X)`,
+  `-lrdkb_feature_mode_gate`, `-ldevicemode`.
 - Partner defaults: `/etc/partners_defaults.json`, `/nvram/partners_defaults.json`, `/opt/secure/bootstrap.json`,
   `PartnerID`, `apply_system_defaults`, `system_defaults*`.
 

@@ -23,7 +23,7 @@ OpenCode also reads `.claude/skills` and `.agents/skills`, so any of the three w
 
 | Skill | What it does |
 |---|---|
-| [`rdk-knowledge-parser`](skills/rdk-knowledge-parser/SKILL.md) | Maps every dependency of an RDK / RDK-B component: IPC (sysevent, syscfg, PSM, CCSP bus, rbus, D-Bus, MQTT, msgpack, file IPC), external processes (v_secure_system, systemctl, iptables, ioctl, netlink), data model and cloud (TR-181, RFC, T2, logs, WebConfig, USP), and build (Yocto, autotools, cmake, libraries, feature flags). Ships a scanner and a coverage validator. |
+| [`rdk-knowledge-parser`](skills/rdk-knowledge-parser/SKILL.md) | Maps every dependency of an RDK / RDK-B component: IPC (sysevent, syscfg, PSM, CCSP bus, rbus, D-Bus, MQTT, msgpack, file IPC), external processes (v_secure_system, systemctl, iptables, ioctl, netlink), data model and cloud (TR-181, RFC, T2, logs, WebConfig, USP), and build (Yocto, autotools, cmake, libraries, feature flags). Ships a full-tree scanner, a C call extractor with direction/gate/resolution/HAL/rootfs hints, a graph-alignment reference, and coverage validators. |
 
 ## Layout
 

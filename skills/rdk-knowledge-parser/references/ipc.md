@@ -46,8 +46,11 @@ Pitfalls:
 | `Utopia_Get*/Utopia_Set*/Utopia_RawGet/RawSet` with `UtopiaValue` enums | reader/writer via utctx: map enum to key in `utctx/lib/utctx.c` table |
 | `syscfg_create`, `syscfg_format`, `apply_system_defaults` with `system_defaults*` files | default seeding |
 
-Namespaced keys: `syscfg_get("ns", "key")` stored as `ns::key`. Indexed keys like
-`PortRangeForward_%d` are templated.
+Namespaced keys: `syscfg_get("ns", "key")` stored as `syscfg:ns::key`; record the
+`namespace` property. Indexed keys like `PortRangeForward_%d` are templated: derive a
+pattern and find the concrete keys it matches. `c_extract.py` records the namespace
+argument and marks the resolution. It also records literal values written by
+`sysevent_set`, useful for proving the writer of a key.
 
 ## PSM (CCSP Persistent Storage Manager, `PsmSsp`, `/nvram/bbhm_cur_cfg.xml`)
 

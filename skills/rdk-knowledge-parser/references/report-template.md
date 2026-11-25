@@ -26,16 +26,29 @@ Source: <repo>@<commit>  Scanner: rdk_dep_scan.py (<date>)  Manual passes: <list
 
 ## IPC
 ### sysevent
-| Key | Dir | Evidence | Gate | Peer |
-|---|---|---|---|---|
-| `current_wan_ifname` | get | firewall.c:2610 | - | WAN manager |
-| `ipv6_%s-prefix` (templated) | get | firewall_ipv6.c:123 | `_HUB4_PRODUCT_REQ_` | service_ipv6 |
+| Key | Relation | Resolution | Evidence | Function | Gate | Provider |
+|---|---|---|---|---|---|---|
+| `current_wan_ifname` | READS | literal | utopia/firewall.c:2610 | `firewall_main` | - | WAN manager |
+| `ipv4_%s-status` | READS | templated (`ipv4_.+-status`) | utopia/firewall.c:123 | `get_firewall_settings` | `_HUB4_PRODUCT_REQ_` | unknown |
+
+`c_extract.py` fills relation/resolution/function/gate for C call sites. Mark
+`unconditional: true` only when a use is outside all gates. Keep templated and
+concrete keys as separate rows linked by the pattern.
 
 (... one table per mechanism / category ...)
 
+## HAL functions and utility owners
+| Interface | Module / path hint | Evidence | Recipe / package |
+|---|---|---|---|
+
+## Root filesystem
+| Artifact | Installed path | Recipe | Package |
+|---|---|---|---|
+
 ## Peer components
-| Peer | Interfaces |
-|---|---|
+| Peer | Interfaces | Status |
+|---|---|---|
+| ... | ... | provider unknown / stub / parsed |
 
 ## Open questions
 - Unresolved macros, templated keys, unclassified commands, unknown owners.

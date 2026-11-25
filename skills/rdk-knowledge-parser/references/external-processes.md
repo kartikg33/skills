@@ -33,6 +33,29 @@ Common families seen in utopia:
 
 `echo x > /proc/...` or `cat /tmp/file` are both a process dependency (busybox) and a file dependency.
 
+## Linux utilities: name to rootfs owner
+
+A spawned command is an interface, not just a tool name. For each one record:
+`exec:<name>`, expected rootfs path, and the package/recipe that installs it.
+Common hints (verify against `do_install`/`FILES:${PN}`):
+
+| Utility | Hint | Usually from |
+|---|---|---|
+| `sysevent`, `syscfg`, `firewall`, `service_*` | `/sbin` or `/usr/bin` | utopia |
+| `psmcli`, `dmcli` | `/usr/bin` | CCSP |
+| `iptables`, `iptables-restore`, `ip6tables`, `ipset` | `/usr/sbin` | netfilter recipes |
+| `ip`, `ifconfig`, `route`, `brctl` | `/sbin`, `/usr/sbin` | iproute2 / net-tools / bridge-utils |
+| `cat`, `grep`, `sh`, `echo` | `/bin` (busybox applets) | busybox |
+| RDK shell helpers | `/lib/rdk/*.sh`, `/etc/utopia/service.d/*.sh` | utopia / rdk scripts |
+
+`c_extract.py` adds `executable`, `path_hint` and `provider_hint` to `exec` records.
+These are hints only. `RESOLVES_TO` must be proven from the image rootfs recipe.
+When the command is a script with no file in the tree (`utopia_ip_route.sh`,
+`apply_partner_customization.sh`), the peer component owns it: report `provider unknown`.
+
+Shell functions are a separate interface: `shellfn:/etc/utopia/service.d/ut_plat.sh:addCron`
+is not a binary. `source`/`.` records `SOURCES` on the defining file.
+
 ## systemd / init
 
 - `systemctl start|stop|restart|is-active <unit>` from C or shell: dependency on that unit
@@ -54,6 +77,13 @@ Common families seen in utopia:
 `NLM_F_*`, libnl `nl_*`/`rtnl_*`/`genl_*`, libmnl `mnl_*`. Record protocol and message types.
 Also `NETLINK_KOBJECT_UEVENT` (hotplug), `NETLINK_NETFILTER`.
 
+## Kernel interfaces as nodes
+
+Record the request, not only the syscall: `ioctl:SIOCGIFADDR`,
+`netlink:NETLINK_ROUTE`, `sysctl:net.ipv4.ip_forward`, `proc:/proc/net/arp`,
+`sysfs:/sys/class/net/<if>/...`, `socket:SOCK_RAW`. `c_extract.py` emits
+`kind: ioctl` with the request macro as its key.
+
 ## Netfilter libraries and generated rules
 
 - `nfq_*` (libnetfilter_queue: utopia `trigger`, `nfq_handler`), `nfct_*`, `iptc_*`, `nftnl_*`, `ipset_*`, `libnet_*`.
@@ -61,6 +91,12 @@ Also `NETLINK_KOBJECT_UEVENT` (hotplug), `NETLINK_NETFILTER`.
   then `iptables-restore`. Chains, `-j` targets, `-m set --match-set <ipset>`, `-m mark`, `NFQUEUE --queue-num N`
   are contracts with other components that add rules to the same chains, or with kernel modules.
   utopia `firewall.c` generates hundreds of chains (`lan2wan`, `wan2lan`, `general_input`, ...).
+- Keep each generated rule as a **template with placeholders**, not as an opaque line.
+  `c_extract.py` emits `kind: netfilter-rule` with `template`, `family`, `table`, and
+  `filled_from` (`placeholder`, `position`, argument expression). Trace each injected
+  argument to the sysevent/syscfg/PSM/TR-181/device property or code symbol that supplies it.
+  Example: `-I POSTROUTING -o %s -j SNAT --to-source %s` filled from `XLAT_IF` and `XLAT_IP`
+  (`utopia/source/firewall/firewall.c:995`, gate `defined(FEATURE_464XLAT)`).
 
 ## Raw sockets
 

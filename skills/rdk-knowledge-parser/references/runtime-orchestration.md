@@ -10,8 +10,11 @@ Who starts the component, who it starts, and in what order.
 ## systemd
 
 - Unit files (`*.service`, `*.path`, `*.timer`, `*.target`) in the repo or the recipe's `SRC_URI`.
-- Edges: `After=`, `Before=`, `Requires=`, `Wants=`, `BindsTo=`, `PartOf=`, `Conflicts=`.
-- `ExecStart*=`/`ExecStop=`: binaries and scripts run. `EnvironmentFile=`: env dependency.
+- Edges (keep the kind): `After=`, `Before=`, `Requires=`, `Wants=`, `BindsTo=`,
+  `PartOf=`, `Conflicts=`, `WantedBy=`. These are `UNIT_DEPENDS` relations, not IPC.
+- `ExecStart*=`/`ExecStartPre=`/`ExecStartPost=`/`ExecStop=`: binaries and scripts run
+  (`STARTS` on an executable). `EnvironmentFile=`: env dependency.
+- `.path` unit with `PathExists=`/`PathChanged=`: the component is `TRIGGERED_BY` a file.
 - `ConditionPathExists=` / `.path` `PathExists=`: file-triggered start.
 - Runtime control from code: `systemctl restart <unit>`.
 

@@ -17,6 +17,15 @@ Files are the most common hidden IPC in RDK-B. Treat each path as an interface.
 | peer | who else reads/writes it |
 | persistence | volatile (`/tmp`, `/var`, `/run`) vs persistent (`/nvram`, `/nvram2`, `/opt/secure`, `/data`) vs read-only image (`/etc`, `/usr`, `/lib`) |
 
+## Root filesystem view
+
+Every path is a `FilePath` node: `kind` (`file`, `dir`, `symlink`, `device`, `fifo`,
+`socket`) and `storage` (`rootfs-ro`, `tmpfs`, `nvram`, `secure`, `logs`, `proc`, `sys`).
+Record the parent chain: `/usr/bin/firewall` -> `/usr/bin` -> `/usr` -> `/`.
+An executable name resolves to a path on the rootfs; a script may come from another
+recipe. Do not claim an owner from the path alone: check `do_install`, `FILES:${PN}`,
+packagegroups and `IMAGE_INSTALL` in the Yocto layers.
+
 ## How to detect
 
 C:

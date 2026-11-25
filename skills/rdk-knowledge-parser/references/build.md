@@ -48,6 +48,20 @@ Override syntax: both old `_append`/`_${PN}` and new `:append`/`:${PN}` exist. C
 - `-DX`: feature define. Cross-reference with `#ifdef X` in code.
 - Static `.a` vs shared `.so`: `.la`/`LTLIBRARIES` → shared by default; `noinst_` → internal convenience lib.
 
+## Artifacts and installed files
+
+Map build targets to artifacts, not just to a component directory:
+- automake: `<target>_SOURCES`, `bin_PROGRAMS`, `lib_LTLIBRARIES`, `<target>_LDADD`, `noinst_LTLIBRARIES`.
+- cmake: `add_executable`, `add_library`, `target_link_libraries`, `install(TARGETS ...)`.
+- Yocto: `do_install`, `FILES:${PN}`, `SYSTEMD_SERVICE:${PN}`, packagegroups, `IMAGE_INSTALL`.
+- systemd: `ExecStart=` path -> artifact on the rootfs.
+
+Each binary, shared/static library, script and installed config file is its own artifact.
+Dependencies found in a source file belong to the artifact that compiles that source.
+If a header is shared by several artifacts, say so in the note rather than guessing.
+`Recipe` and `BuildFile` are separate from `Artifact`: the `.bb`, `.bbappend`, `.inc` and
+patches that shape a build are evidence nodes of their own.
+
 ## Headers
 
 `#include <ccsp_base_api.h>`, `"sysevent/sysevent.h"`, `<syscfg/syscfg.h>`, `<telemetry_busmessage_sender.h>`,
@@ -58,7 +72,10 @@ Override syntax: both old `_append`/`_${PN}` and new `:append`/`:${PN}` exist. C
 
 Every `#if/#ifdef/#ifndef` macro (e.g. `_HUB4_PRODUCT_REQ_`, `RDKB_EXTENDER_ENABLED`, `CONFIG_CISCO_FEATURE`,
 `FEATURE_SUPPORT_MAPT_NAT46`, `_PLATFORM_RASPBERRYPI_`, `MULTILAN_FEATURE`) is a gate.
-Trace its source: `-D` in Makefile.am/configure.ac, `CFLAGS:append` in a `.bbappend`, or `DISTRO_FEATURES`.
+Trace its source: `-D` in Makefile.am/configure.ac, `CFLAGS:append` in a `.bbappend`, or `DISTRO_FEATURES`. A gate that names a device (`_HUB4_PRODUCT_REQ_`,
+`:append:<machine>`, `MACHINE_FEATURES`) also tells you the hardware the dependency
+is on: record gate and device with the dependency. `c_extract.py` reports the gate
+stack for C call sites and sets `unconditional: false` when a use is gated.
 
 ## Tests
 
