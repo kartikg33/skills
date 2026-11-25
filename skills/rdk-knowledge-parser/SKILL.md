@@ -1,6 +1,6 @@
 ---
 name: rdk-knowledge-parser
-description: Map every dependency of an RDK / RDK-B component (C/C++, shell, autotools/cmake, Yocto). Use when asked what a component depends on, what it talks to, what would break if X changes, or to build a dependency/interface inventory. Covers IPC (sysevent, syscfg, PSM, CCSP message bus/COSA, D-Bus, rbus, MQTT, msgpack, JSON/YAML/INI/TOML, nvram, /tmp and other file IPC), external processes (v_secure_system, system(), popen, systemctl, iptables/ip, ioctl, netlink, procfs/sysfs), data model and cloud interfaces (TR-181, RFC, Telemetry T2 markers, logs, syslog, WebConfig blobs, WebPA, TR-369 USP, TR-069, HAL), and build dependencies (Yocto DEPENDS/RDEPENDS, .bb/.bbappend, make, automake, cmake, autoconf, CFLAGS, -l/-L libraries, compile-time feature flags).
+description: Map every dependency of an RDK / RDK-B component (C/C++, shell, autotools/cmake, Yocto). Use when asked what a component depends on, what it talks to, what would break if X changes, or to build a dependency/interface inventory. Covers IPC (sysevent, syscfg, PSM, CCSP message bus/COSA, D-Bus, rbus, MQTT, msgpack, JSON/YAML/INI/TOML, nvram, /tmp and other file IPC), external processes (v_secure_system, system(), popen, systemctl, iptables/ip, ioctl, netlink, procfs/sysfs), data model and cloud interfaces (TR-181, RFC, Telemetry T2 markers, logs, syslog, WebConfig blobs, WebPA, TR-369 USP, TR-069, HAL), and build dependencies (Yocto DEPENDS/RDEPENDS, .bb/.bbappend, make, automake, cmake, autoconf, CFLAGS, -l/-L libraries, compile-time feature flags). Reports direction, gates, key resolution and rootfs owners for graph ingestion.
 license: Apache-2.0
 compatibility: opencode, claude-code, openai-codex
 metadata:
@@ -32,29 +32,50 @@ Never infer a dependency from a name alone; open the code.
    ```
    Categories: `ipc`, `filesystem`, `external_process`, `data_model_cloud`,
    `build`, `runtime_orchestration`.
-3. **Work the UNCLASSIFIED section.** It lists commands, libraries and scripts
+3. **Extract call-level detail from C.** The inventory has no direction, gate or function.
+   Run the call extractor on each interesting `.c` file (or every one in a small component):
+   ```bash
+   python3 <skill_dir>/scripts/c_extract.py --root <repo_root> --file <rel/path.c> --repo <repo> > calls.json
+   ```
+   It records `direction` (`read`/`write`/`subscribe`/`publish`/`exec`/`call`/...),
+   the `#if` gate stack, enclosing function, key resolution (`literal`/`macro`/
+   `templated`/`unresolved`), HAL module, MQTT topic, netfilter rule template with
+   injected argument names, and executable path hints. Pass header files with
+   string `#define`s via `--macros <rel/path.h>` when the component defines keys there.
+4. **Work the UNCLASSIFIED section.** It lists commands, libraries and scripts
    that match no catalog entry. Each one is either a real dependency (classify
    it) or a false positive (dismiss it). Never drop it silently.
-4. **Do the manual passes** the scanner cannot do (see "Blind spots").
-5. **Read each category reference** before writing conclusions:
+5. **Do the manual passes** the scanner cannot do (see "Blind spots").
+6. **Read each category reference** before writing conclusions:
    - [references/ipc.md](references/ipc.md): sysevent, syscfg, utctx/utapi, PSM, CCSP bus, COSA, rbus, D-Bus, MQTT, msgpack, file formats, nvram, shm, signals, srvmgr
    - [references/external-processes.md](references/external-processes.md): system/v_secure_system/popen, shell commands, systemctl, ioctl, netlink, netfilter, procfs/sysfs, kernel modules
    - [references/data-model-cloud.md](references/data-model-cloud.md): TR-181, RFC, T2 markers, logging, WebConfig, WebPA, USP, TR-069, HAL, device.properties, partner defaults
    - [references/build.md](references/build.md): Yocto, autotools, cmake, make, flags, libraries, `#ifdef` features
    - [references/filesystem.md](references/filesystem.md): paths, file IPC, persistence locations
    - [references/runtime-orchestration.md](references/runtime-orchestration.md): systemd units, utopia service registration, event handlers, cron, process monitoring
-6. **Write the report** using [references/report-template.md](references/report-template.md).
+   - [references/graph-alignment.md](references/graph-alignment.md): interface model, direction vocabulary, evidence fields, peer/rootfs questions, alignment with the RDK knowledge graph
+7. **Write the report** using [references/report-template.md](references/report-template.md).
 
 ## Core rules
 
-- **Direction matters.** For each dependency say *producer* or *consumer*:
-  `sysevent_set` = producer of an event, `sysevent_get`/`setnotification`/`async` = consumer.
-  `syscfg_set`+commit = writer, `syscfg_get` = reader. Unpaired keys point to another component.
+- **Interfaces, not direct component edges.** Two components are linked only through a shared
+  interface: a sysevent key, a syscfg key, a TR-181 node, a HAL function, a file, a command,
+  a package. Never write "X depends on component Y" without naming the interface and evidence.
+  Attach every dependency to the **artifact** (binary, library, script) whose source has the
+  evidence, not just to the directory. Peers seen only in evidence stay `provider unknown`
+  until another component is parsed.
+- **Direction matters.** Use one vocabulary everywhere: `read`, `write`, `delete`, `seeds`,
+  `subscribe`, `publish`, `provides`, `registers`, `calls`, `executes`, `sources`, `schedules`,
+  `triggers`, `loads`, `defines`, `uses`, `checks`. `sysevent_set` = write,
+  `sysevent_get`/`setnotification`/`async` = read/subscribe/triggered-by;
+  `syscfg_set`+commit = write, `syscfg_get` = read. Unpaired keys point to another component.
 - **Key-level, not API-level.** "Uses sysevent" is useless. List every key
   (`wan-status`, `firewall-restart`, ...) with direction. Same for syscfg, PSM, TR-181, RFC, T2.
 - **Resolve indirection.** Keys hidden behind `#define`, `snprintf` templates
   (`"ipv6_%s-prefix"`), arrays, or helper wrappers must be resolved to their
-  literal form or marked `templated:` with the format string.
+  literal form or marked `templated:` with the format string. For templated keys also
+  derive a pattern (`ipv4_%s-status` -> `ipv4_.+-status`) and find the concrete keys it matches:
+  a producer may write `ipv4_1-status` while the consumer reads the template.
 - **Follow wrappers one level.** `Utopia_Get*` hits syscfg. `Utopia_SetEvent` hits sysevent.
   `PSM_VALUE_GET_STRING` is a macro over `PSM_Get_Record_Value2` over the CCSP bus.
   `v_secure_system` is `libsecure_wrapper` over `fork/exec` of `/bin/sh -c`.
@@ -66,11 +87,25 @@ Never infer a dependency from a name alone; open the code.
   reads/writes it. Record path, R/W, format, and the likely peer.
 - **Compile-time gates are dependencies.** `#ifdef _HUB4_PRODUCT_REQ_`,
   `AM_CONDITIONAL`, `DISTRO_FEATURES` decide which deps exist on which platform.
-  Report the gate next to the dependency.
+  Report the gate next to the dependency, with the enclosing function and the exact
+  `file:line`. `c_extract.py` supplies the gate stack for C. Mark a dependency
+  `unconditional: true` only when at least one use is outside all gates.
+  A gate that selects a device profile (`_HUB4_PRODUCT_REQ_`, `:append:<machine>`)
+  also tells you which hardware the dependency exists on.
 - **Platform split.** Many RDK-B devices run two CPUs (ARM + ATOM / Puma). `rpcclient`,
   `arris_rpc_client`, `ncpu_exec`, `ATOM_INTERFACE_IP` mean cross-CPU dependencies.
+- **HAL functions are interfaces.** Not just "uses WiFi HAL": list
+  `wifi_getRadioEnable`, module `wifi`, header, and the library that implements it.
+  `-lhal_wifi` plus the call is the full dependency.
+- **Utilities need an owner.** `iptables`, `psmcli`, `cat`, `awk` are interfaces too.
+  Say where the binary is expected on the rootfs (`/usr/sbin`, `/bin`, busybox applet,
+  `/lib/rdk/...`) and find the recipe/package that installs it. A bare command name is
+  not enough if the rootfs layout changes.
+- **Rule templates carry injected values.** For `-A ... -d %s -j DNAT --to-destination %s`,
+  trace each placeholder to the key, device property or computed variable that fills it.
 - **Test code is separate.** Mark gtest/gmock/mocks as test-only; do not mix
-  into runtime deps.
+  into runtime deps. Logs written for logging only and telemetry markers are exports,
+  not component dependencies: report them separately.
 
 ## Blind spots (always check by hand)
 
@@ -88,6 +123,10 @@ Never infer a dependency from a name alone; open the code.
 - Event names passed through tables (`SERVICE_CUSTOM_EVENTS` strings like
   `"lan-status|/etc/utopia/service.d/x.sh"`) are sysevent subscriptions.
 - `dlopen` / function pointers to HAL vendor libs.
+- The value written to a key or into a rule: `sysevent_set(fd, tok, key, value, 0)` records the
+  key but the value may come from another interface.
+- Rootfs provenance: a path seen in code is not proof of which recipe installs it. Check
+  `do_install`, `FILES:${PN}`, packagegroups and the image recipe before claiming an owner.
 - Data in config defaults (`system_defaults*`, `partners_defaults.json`, `bbhm_def_cfg.xml`)
   seeds syscfg/PSM keys: the owner of the default is not the user of the key.
 
@@ -95,8 +134,9 @@ Never infer a dependency from a name alone; open the code.
 
 Produce, per component:
 1. Summary table: category, count, top peers.
-2. One section per category with `dependency | direction | key/target | evidence (file:line) | gate`.
-3. Peer component list (who is on the other side of each interface).
-4. Open questions: everything unresolved, unclassified or templated.
+2. One section per category with `dependency | direction | key/target | resolution | evidence (file:line) | function | gate`.
+3. Peer component list (who is on the other side of each interface; mark unknown owners).
+4. Rootfs/package view: binary, script and installed file -> install path -> recipe.
+5. Open questions: everything unresolved, unclassified or templated.
 
 State the scanner version/run and which manual passes were done, so a reviewer can trust coverage.
