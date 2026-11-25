@@ -1,0 +1,6 @@
+[Unit]
+After=rbus.service CcspPandMSsp.service
+Requires=rbus.service
+[Service]
+EnvironmentFile=/etc/device.properties
+ExecStart=/usr/bin/sample-agent

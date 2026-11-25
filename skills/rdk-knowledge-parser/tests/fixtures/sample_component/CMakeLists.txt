@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(RBUS REQUIRED rbus)
+add_executable(sample src/agent.c)
+target_link_libraries(sample rbus msgpackc dbus-1 mosquitto webconfig_framework secure_wrapper telemetry_msgsender)
