@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright 2026 Kartik Gohil
+# SPDX-License-Identifier: Apache-2.0
+
 """
 validate_coverage.py - prove rdk_dep_scan.py captures every dependency signal
 in a source tree.

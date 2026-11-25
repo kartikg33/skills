@@ -1,3 +1,8 @@
+<!--
+Copyright 2026 Kartik Gohil
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Runtime orchestration dependencies
 
 Who starts the component, who it starts, and in what order.

@@ -1,3 +1,8 @@
+<!--
+Copyright 2026 Kartik Gohil
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Validation record
 
 Target: [rdkcentral/utopia](https://github.com/rdkcentral/utopia) `develop` @ `8183e64`

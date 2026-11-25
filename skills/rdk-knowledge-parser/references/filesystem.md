@@ -1,3 +1,8 @@
+<!--
+Copyright 2026 Kartik Gohil
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Filesystem dependencies
 
 Files are the most common hidden IPC in RDK-B. Treat each path as an interface.

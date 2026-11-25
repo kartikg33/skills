@@ -1,3 +1,8 @@
+<!--
+Copyright 2026 Kartik Gohil
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Build dependencies
 
 ## Yocto (`meta-rdk-*` layers)

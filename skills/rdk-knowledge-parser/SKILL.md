@@ -7,6 +7,10 @@ metadata:
   domain: rdk-b
   validated-against: rdkcentral/utopia@develop
 ---
+<!--
+Copyright 2026 Kartik Gohil
+SPDX-License-Identifier: Apache-2.0
+-->
 
 # RDK knowledge parser: dependency mapping
 

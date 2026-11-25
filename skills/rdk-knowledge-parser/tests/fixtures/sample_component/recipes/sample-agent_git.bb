@@ -1,3 +1,6 @@
+# Copyright 2026 Kartik Gohil
+# SPDX-License-Identifier: Apache-2.0
+
 SUMMARY = "sample agent"
 LICENSE = "Apache-2.0"
 DEPENDS = "rbus msgpack-c dbus mosquitto webconfig-framework utopia telemetry"

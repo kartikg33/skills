@@ -1,3 +1,6 @@
+# Copyright 2026 Kartik Gohil
+# SPDX-License-Identifier: Apache-2.0
+
 interface:
   display_name: "RDK knowledge parser"
   short_description: "Map IPC, process, data-model, cloud and build dependencies of an RDK component"

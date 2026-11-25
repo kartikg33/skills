@@ -1,3 +1,8 @@
+<!--
+Copyright 2026 Kartik Gohil
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Data model, cloud, telemetry and logging dependencies
 
 ## TR-181 data model

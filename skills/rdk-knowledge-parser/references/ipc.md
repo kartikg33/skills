@@ -1,3 +1,8 @@
+<!--
+Copyright 2026 Kartik Gohil
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # IPC and configuration-store dependencies
 
 For each mechanism: how to spot it, how to extract the key, which direction it

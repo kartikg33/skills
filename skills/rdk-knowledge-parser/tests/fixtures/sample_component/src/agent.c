@@ -1,3 +1,7 @@
+/*
+ * Copyright 2026 Kartik Gohil
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <rbus/rbus.h>
 #include <msgpack.h>
 #include <dbus/dbus.h>

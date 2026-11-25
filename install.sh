@@ -1,4 +1,7 @@
 #!/usr/bin/env sh
+# Copyright 2026 Kartik Gohil
+# SPDX-License-Identifier: Apache-2.0
+
 # Install skills from this repo for OpenCode, Claude Code and/or OpenAI Codex.
 #
 #   ./install.sh                     # all agents, user scope, symlink
